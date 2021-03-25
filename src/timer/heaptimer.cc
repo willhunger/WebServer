@@ -136,3 +136,10 @@ bool HeapTimer::empty()
 {
     return heap.empty();
 }
+
+void HeapTimer::adjust(int id, int newExpires)
+{
+    assert(!heap.empty() && ref.find(id) != end(ref));
+    heap[ref[id]].expires = Clock::now() + millisecond(newExpires);
+    heapifyDown(ref[id], heap.size());
+}
