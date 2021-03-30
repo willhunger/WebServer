@@ -21,7 +21,7 @@ WebServer::WebServer(
 {
     _srcDir = getcwd(nullptr, 256);
     assert(_srcDir);
-    strncat(_srcDir, "/resources", 16),
+    strncat(_srcDir, "/static", 16),
     HttpConn::userCount = 0;
     HttpConn::srcDir = _srcDir;
     sqlConnPool::instance()->init("localhost", sqlPort, sqlUser, sqlPwd, dbName, connPoolNum);
