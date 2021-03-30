@@ -8,7 +8,7 @@
 #include <arpa/inet.h>
 #include <sys/types.h>
 
-#include "../pool/sqlconnRAII.cc"
+#include "../pool/sqlconnRAII.h"
 #include "../buffer/buffer.h"
 #include "httprequest.h"
 #include "httpresponse.h"

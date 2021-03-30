@@ -1,6 +1,7 @@
 #ifndef SQLCONNPOOL_H
 #define SQLCONNPOOL_H
 
+#include <iostream>
 #include <string>
 #include <queue>
 #include <thread>

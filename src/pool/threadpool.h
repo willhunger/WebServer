@@ -14,7 +14,7 @@ public:
     explicit ThreadPool(size_t threadNum = 8) :
     _pool(std::make_shared<Pool>())
     {
-        for (int i = 0; i < threadNum; ++i) 
+        for (size_t i = 0; i < threadNum; ++i) 
         {
             std::thread([pool = _pool] {
                 std::unique_lock<std::mutex> locker(pool->mtx);
@@ -52,7 +52,7 @@ public:
     }
 
     template<class T>
-    void AddTask(T&& task)
+    void addTask(T&& task)
     {
         {
             std::lock_guard<std::mutex> locker(_pool->mtx);

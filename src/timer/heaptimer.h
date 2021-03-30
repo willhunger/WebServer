@@ -1,5 +1,5 @@
 #ifndef HEAP_TIMER_H
-#define HEAP_TINMR_H
+#define HEAP_TIMER_H
 
 #include <queue>
 #include <unordered_map>
@@ -20,17 +20,17 @@ struct TimerNode
     TimerNode(int _id, timestamp _expires, timeOutCallBack _callback):
         id(_id), expires(_expires), callback(_callback) {}
         
-    bool operator< (const TimerNode& rhs);
+    bool operator< (const TimerNode& rhs) const
+    {
+        return this->expires < rhs.expires;        
+    }
 
     int id;
     timestamp expires;
     timeOutCallBack callback;
 };
 
-bool TimerNode::operator< (const TimerNode& rhs)
-{
-    return this->expires < rhs.expires;
-}
+
 
 class HeapTimer
 {

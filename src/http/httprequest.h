@@ -10,7 +10,7 @@
 
 #include "../buffer/buffer.h"
 #include "../pool/sqlconnpool.h"
-#include "../pool/sqlconnRAII.cc"
+#include "../pool/sqlconnRAII.h"
 
 class HttpRequest
 {
@@ -71,8 +71,8 @@ private:
     std::unordered_map<string, string> _header;
     std::unordered_map<string, string> _post;
 
-    static const std::unordered_set<string> DEFAULT_HTML;
-    static const std::unordered_map<string, int> DEFAULT_HTML_TAG;
+    static const std::unordered_set<std::string> DEFAULT_HTML;
+    static const std::unordered_map<std::string, int> DEFAULT_HTML_TAG;
     static int convertToHex(char ch);
 };
 

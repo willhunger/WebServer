@@ -5,9 +5,9 @@ bool HttpConn::isET;
 
 HttpConn::HttpConn() :
     _fd(-1),
-    _addr({0}),
     _isClose(true)
 {
+        _addr = {0};
 }
 
 HttpConn::~HttpConn()
@@ -75,7 +75,7 @@ ssize_t HttpConn::write(int* _errno)
     do
     {
         len = writev(_fd, _iov, _iovCnt);
-        if (len < 0) 
+        if (len <= 0) 
         {
             *_errno = errno;
             break;
@@ -113,7 +113,7 @@ bool HttpConn::process()
     }
     else if (_request.parse(_readBuffer))
     {
-        _response.init(SrcDir, _request.path(), _request().isKeepAlive(), 200);
+        _response.init(srcDir, _request.path(), _request.isKeepAlive(), 200);
     }
     else
     {
@@ -125,10 +125,10 @@ bool HttpConn::process()
     _iov[0].iov_len = _writeBuffer.readableBytes();
     _iovCnt = 1;
 
-    if (_response.fileLen() > 0 && _response.File())
+    if (_response.fileLen() > 0 && _response.file())
     {
-        _iov[0].iov_base = _response.file();
-        _iov[0].iov_len = _response.fileLen();
+        _iov[1].iov_base = _response.file();
+        _iov[1].iov_len = _response.fileLen();
         _iovCnt = 2;
     }
 

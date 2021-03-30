@@ -32,7 +32,7 @@ void sqlConnPool::init(const char* host, int port,
         }
         connQueue.push(sql);
     }
-    freeCount = maxConn = connSize;
+    maxConn = connSize;
     sem_init(&semId, 0, maxConn);
 }
 

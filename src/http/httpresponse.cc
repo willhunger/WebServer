@@ -35,12 +35,14 @@ const std::unordered_map<int, std::string> HttpResponse::FILE_PATH = {
     { 404, "/404.html" },
 };
 
-HttpResponse::HttpResponse() : 
-    _code(-1),
-    _isKeepAlive(false),
-    _mmFile(nullptr),
-    _mmFileStat()
+HttpResponse::HttpResponse()
 {
+    _code = -1;
+    _path = "";
+    _srcDir = "";
+    _isKeepAlive = false;
+    _mmFile = nullptr;
+    _mmFileStat = {0};
 }
 
 HttpResponse::~HttpResponse()
@@ -57,6 +59,7 @@ void HttpResponse::init(const std::string& srcDir, std::string& path, bool isKee
     }
     _code = code;
     _isKeepAlive = isKeepAlive;
+    _path = path;
     _srcDir = srcDir;
     _mmFile = nullptr;
     _mmFileStat = {0};
@@ -74,9 +77,9 @@ void HttpResponse::response(Buffer& buffer)
     }
     else if (_code == -1)
     {
-        _code = 202;
+        _code = 200;
     }
-    errorHtml();
+    errorHtml(); 
     addStateLine(buffer);
     addHeader(buffer);
     addContent(buffer);
@@ -94,9 +97,9 @@ size_t HttpResponse::fileLen() const
 
 void HttpResponse::errorHtml()
 {
-    if (HTTP_STATUS.count(_code) == 1)
+    if (FILE_PATH.count(_code) == 1)
     {
-        _path = HTTP_STATUS.find(_code)->second;
+        _path = FILE_PATH.find(_code)->second;
         stat((_srcDir + _path).data(), &_mmFileStat);
     }
 }
@@ -133,6 +136,7 @@ void HttpResponse::addHeader(Buffer& buffer)
 
 void HttpResponse::addContent(Buffer& buffer)
 {
+    // std::cout << "real path : " << (_srcDir + _path).data() << std:: endl;
     int srcFd = open((_srcDir + _path).data(), O_RDONLY);
     if (srcFd < 0)
     {
@@ -140,7 +144,7 @@ void HttpResponse::addContent(Buffer& buffer)
         return;
     }
 
-    int* mmRet = (int*) mmap(0, _mmFileStat.st_size, PORT_READ, MAP_PRIVATE, srcFd, 0);
+    int* mmRet = (int*) mmap(0, _mmFileStat.st_size, PROT_READ, MAP_PRIVATE, srcFd, 0);
     if (*mmRet == -1)
     {
         errorContent(buffer, "File Not Found");
@@ -180,7 +184,6 @@ void HttpResponse::errorContent(Buffer& buffer, std::string message)
     std::string body;
     std::string status;
     body += "<html><title>Error</title>";
-    body += "<body bgcolor=\"ffffff\">";
     if (HTTP_STATUS.count(_code) == 1)
     {
         status = HTTP_STATUS.find(_code)->second;
@@ -191,7 +194,8 @@ void HttpResponse::errorContent(Buffer& buffer, std::string message)
     }
     body += std::to_string(_code) + " : " + status + "\n";
     body += "<p>" + message + "</p>";
-    body += "<hr><em>WebServer 1.0</em></body></html>";
+    body += "<em>WebServer 1.0</em></html>";
+    
     buffer.append("Content-length: " + std::to_string(body.size()) + "\r\n\r\n");
     buffer.append(body);
 }

@@ -17,7 +17,7 @@ WebServer::WebServer(
     _isClose(false),
     _timer(new HeapTimer()),
     _threadpool(new ThreadPool(threadNum)),
-    _epoller(new Epoller)
+    _epoller(new Epoller())
 {
     _srcDir = getcwd(nullptr, 256);
     assert(_srcDir);
@@ -30,7 +30,6 @@ WebServer::WebServer(
     {
         _isClose = true;
     }
-
 }
 
 WebServer::~WebServer()
@@ -80,8 +79,8 @@ void WebServer::start()
         int eventCnt = _epoller->wait(timeMs);
         for (int i = 0; i < eventCnt; ++i)
         {
-            int fd = _epoller->wait(timeMs);
-            uint32_t events = _epoller->getEventFd(i);
+            int fd = _epoller->getEventFd(i);
+            uint32_t events = _epoller->getEvents(i);
             if (fd == _listenFd)
             {
                 dealListen();
@@ -146,7 +145,7 @@ void WebServer::dealListen()
             sendError(fd, "server busy");
             return;
         }
-        addclient(fd, addr);
+        addClient(fd, addr);
     } while(_listenEvent & EPOLLET);
 }
 
@@ -192,7 +191,8 @@ void WebServer::OnWrite(HttpConn* client)
     assert(client);
     int ret = -1;
     int writeErrno = 0;
-    ret = client->write(&writeError);
+    ret = client->write(&writeErrno);
+    
     if (client->toWriteBytes() == 0)
     {
         if (client->isKeepAlive())
@@ -221,7 +221,6 @@ void WebServer::OnProcess(HttpConn* client)
     else
     {
         _epoller->modFd(client->getFd(), _connEvent | EPOLLIN);
-
     }
 }
 
@@ -231,6 +230,7 @@ bool WebServer::initsocket()
     struct sockaddr_in addr;
     if (_port > 65535 || _port < 1024)
     {
+        std::cout << "port failed" << std::endl;
         return false;
     }
     addr.sin_family = AF_INET;
@@ -246,12 +246,14 @@ bool WebServer::initsocket()
     _listenFd = socket(AF_INET, SOCK_STREAM, 0);
     if (_listenFd < 0)
     {
+        std::cout << "socket() failed" << std::endl;
         return false;
     }
 
     ret = setsockopt(_listenFd, SOL_SOCKET, SO_LINGER, &optLinger, sizeof(optLinger));
     if (ret < 0)
     {
+        std::cout << "setsockopt() failed" << std::endl;
         close(_listenFd);
         return false;
     }
@@ -260,13 +262,15 @@ bool WebServer::initsocket()
     ret = setsockopt(_listenFd, SOL_SOCKET, SO_REUSEADDR, (const void*)&optval, sizeof(int));
     if (ret < 0)
     {
+        std::cout << "setsockopt() failed" << std::endl;
         close(_listenFd);
         return false;
     }
 
-    ret = bind(_listenFd, (struct sockaddr*)&addr, sizeof(addr));
+    ret = bind(_listenFd, (struct sockaddr *)&addr, sizeof(addr));
     if (ret < 0)
     {
+        std::cout << "bind() failed" << std::endl;
         close(_listenFd);
         return false;
     }
@@ -274,6 +278,7 @@ bool WebServer::initsocket()
     ret = listen(_listenFd, 6);
     if (ret < 0)
     {
+        std::cout << "listen() failed" << std::endl;
         close(_listenFd);
         return false;
     }
@@ -281,6 +286,7 @@ bool WebServer::initsocket()
     ret = _epoller->addFd(_listenFd, _listenEvent | EPOLLIN);
     if (ret == 0)
     {
+        std::cout << "epoller failed" << std::endl;
         close(_listenFd);
         return false;
     }

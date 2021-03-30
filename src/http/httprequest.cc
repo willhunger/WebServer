@@ -17,6 +17,7 @@ void HttpRequest::init()
     _method = _path = _version = _body = "";
     _state = REQUEST_LINE;
     _header.clear();
+    _post.clear();
 }
 
 bool HttpRequest::parse(Buffer& buff)
@@ -43,6 +44,7 @@ bool HttpRequest::parse(Buffer& buff)
                 {
                     _state = FINISH;
                 }
+                break;
             case BODY:
                 parseBody(line);
                 break;
@@ -100,7 +102,7 @@ bool HttpRequest::isKeepAlive() const
 {
     if (_header.count("Connection") == 1)
     {
-        return (h_eader.find("Connection")->second == "keep-alive") && _version = "1.1";
+        return (_header.find("Connection")->second == "keep-alive") && (_version == "1.1");
     }
     return false;
 }
@@ -138,11 +140,11 @@ bool HttpRequest::parseRquestLine(const string& line)
 
 void HttpRequest::parseHeader(const string& line)
 {
-    std::regex pattern("^[^:*] : ?(.*)$");
+    std::regex pattern("^([^:]*): ?(.*)$");
     std::smatch subMatch;
     if (std::regex_match(line, subMatch, pattern))
     {
-        _header[subMatch[1]] = subMath[2];
+        _header[subMatch[1]] = subMatch[2];
     }
     else
     {
@@ -168,7 +170,7 @@ int HttpRequest::convertToHex(char ch)
 
 void HttpRequest::parsePost()
 {
-    if (_method == "POST" && _header["Conteng-Type"] == "application/x-www-form-urlencoded")
+    if (_method == "POST" && _header["Content-Type"] == "application/x-www-form-urlencoded")
     {
         parseFromUrlencoded();
         if (DEFAULT_HTML_TAG.count(_path))
@@ -197,7 +199,7 @@ void HttpRequest::parseFromUrlencoded()
         return;
     string key, value;
     int num = 0;
-    int n = _body.size();
+    const int n = _body.size();
     int i = 0, j = 0;
     for (; i < n; ++i)
     {
@@ -241,11 +243,10 @@ bool HttpRequest::verifyUser(const string& name, const string& pwd, bool isLogin
     MYSQL* sql;
     sqlConnRAII(&sql, sqlConnPool::instance());
     assert(sql);
-
     bool flag = false;
-    unsigned j = 0;
+    unsigned int j = 0;
     char order[256] = {0};
-    MYSQL_FIELD *field = nullptr;
+    MYSQL_FIELD *fields = nullptr;
     MYSQL_RES *res = nullptr;
 
     if (!isLogin)
@@ -253,16 +254,16 @@ bool HttpRequest::verifyUser(const string& name, const string& pwd, bool isLogin
         flag = true;
     }
 
-    snprintf(order, 256, "SELECT username, password FROM user WHERE usernmae = '%s' LIMIT 1", name.c_str());
-
+    snprintf(order, 256, "SELECT username, password FROM user WHERE username = '%s' LIMIT 1", name.c_str());
     if (mysql_query(sql, order))
     {
         mysql_free_result(res);
         return false;
     }
+
     res = mysql_store_result(sql);
     j = mysql_num_fields(res);
-    field = mysql_fetch_field(res);
+    fields = mysql_fetch_field(res);
 
     while (MYSQL_ROW row = mysql_fetch_row(res))
     {
@@ -288,7 +289,7 @@ bool HttpRequest::verifyUser(const string& name, const string& pwd, bool isLogin
     if (!isLogin && flag == true)
     {
         bzero(order, 256);
-        snprintf(order, 256, "INSERT INTO user(username, password) VALUES('%s', '%s'), name.c_str(), pwd.c_str());
+        snprintf(order, 256, "INSERT INTO user(username, password) VALUES('%s', '%s')", name.c_str(), pwd.c_str());
         if (mysql_query(sql, order))
         {
             flag = false;
